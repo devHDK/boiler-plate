@@ -66,10 +66,26 @@ userSchema.methods.generateToken = function (cb) {
 
   var token = jwt.sign(user._id.toHexString(), "secretToken");
 
+  console.log(user._id.toHexString());
+
   user.token = token;
   user.save(function (err, user) {
     if (err) return cb(err);
     cb(null, user);
+  });
+};
+
+userSchema.statics.findByToken = function (token, cb) {
+  var user = this;
+
+  jwt.verify(token, "secretToken", function (err, decoded) {
+    //유저 아이디를 이용해서 유저를 찾는다
+    //클라이언트에서 가져온 token과 DB에 보관된 토큰이 일치하는지 확인
+
+    user.findOne({ _id: decoded, token: token }, function (err, user) {
+      if (err) return cb(err);
+      cb(null, user);
+    });
   });
 };
 

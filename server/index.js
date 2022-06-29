@@ -4,10 +4,12 @@ const app = express();
 const port = 5000;
 
 const { User } = require("./model/User");
+const { auth } = require("./middleware/auth");
 const bodyParser = require("body-parser");
 const config = require("./config/key");
 const cookieParser = require("cookie-parser");
 
+app.use(cookieParser());
 app.use(bodyParser.urlencoded({ extended: true })); // url parser
 app.use(bodyParser.json());
 
@@ -17,7 +19,7 @@ mongoose
   .then(() => console.log("mongoDB Connected.."))
   .catch((err) => console.log(err));
 
-app.get("/", (req, res) => {
+https: app.get("/", (req, res) => {
   res.send("/register , /login, /auth ");
 });
 
@@ -45,7 +47,6 @@ app.post("/login", (req, res) => {
       });
     }
     //요청된 email이 DB에 있다면 비밀번호가 맞는 비밀번호인지 확인
-    console.log(req.body.password);
     user.comparePassword(req.body.password, (err, isMatch) => {
       if (!isMatch) {
         return res.json({
@@ -55,18 +56,48 @@ app.post("/login", (req, res) => {
       }
 
       user.generateToken((err, user) => {
-        console.log("gen Token");
-
         if (err) return res.status(400).send(err);
 
         //token을 저장한다..
-        res.cookie("x_auth", user.token).status(200).json({
-          loginSuccess: true,
-          userId: user._id,
-        });
+        res
+          .cookie("x_auth", user.token, {
+            express: new Date(Date.now + 9000000),
+            httpOnly: true,
+            sameSite: "None",
+          })
+          .status(200)
+          .json({
+            loginSuccess: true,
+            userId: user._id,
+          });
       });
     });
   });
+});
+
+app.get("/auth", auth, (req, res) => {
+  // auth : 미드웨어
+  res.status(200).json({
+    _id: req.user._id,
+    isAdmin: req.user.roll === 0 ? false : true,
+    email: req.user.email,
+    name: req.user.name,
+  });
+});
+
+app.get("/logout", auth, (req, res) => {
+  User.findOneAndUpdate(
+    { _di: req.user._id },
+    {
+      token: "",
+    },
+    (err, user) => {
+      if (err) return res.json({ success: false, err });
+      return res.status(200).send({
+        success: true,
+      });
+    }
+  );
 });
 
 app.listen(port, () => {
