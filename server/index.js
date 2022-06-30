@@ -67,7 +67,7 @@ app.post("/api/users/login", (req, res) => {
           .cookie("x_auth", user.token, {
             express: new Date(Date.now + 9000000),
             httpOnly: true,
-            sameSite: "None",
+            sameSite: "Lax",
           })
           .status(200)
           .json({
