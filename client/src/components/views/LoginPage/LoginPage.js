@@ -1,12 +1,15 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import { useDispatch } from "react-redux";
 import { loginUser } from "../../../_action/user_action";
 
-function LoginPage() {
+function LoginPage(props) {
   const dispatch = useDispatch();
 
   const [Email, setEmail] = useState("");
   const [Password, setPassword] = useState("");
+  const navigate = useNavigate();
 
   const onEmailHandler = (event) => {
     setEmail(event.currentTarget.value);
@@ -24,7 +27,13 @@ function LoginPage() {
       password: Password,
     };
 
-    dispatch(loginUser(body));
+    dispatch(loginUser(body)).then((Response) => {
+      if (Response.payload.loginSuccess) {
+        navigate("/");
+      } else {
+        alert("Error");
+      }
+    });
   };
 
   return (
@@ -50,7 +59,7 @@ function LoginPage() {
           onChange={onPasswordHandler}
         ></input>
         <br />
-        <button>Login</button>
+        <button type="submit">Login</button>
       </form>
     </div>
   );
